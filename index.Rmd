@@ -1,8 +1,12 @@
 ---
-title: "index"
+title: "Salmon Escapements"
 author: "Jim Magdanz"
 date: "October 17, 2018"
-output: html_document
+output:
+  html_document
+    toc:yes
+    number_sections:yes
+    theme: flatly
 ---
 
 ```{r setup, include=FALSE}
@@ -27,7 +31,6 @@ Daily escapements: [Alaska Department of Fish and Game. 2017. Daily salmon escap
 ```{r}
 esc <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3Af119a05b-bbe7-4aea-93c6-85434dcb1c5e", method = "libcurl"), stringsAsFactors = FALSE)
 
-head(esc)
 ```
 
 ```{r}
@@ -38,8 +41,8 @@ esc_med <- esc %>%
   group_by(Year,Species) %>% 
   summarize(medianEscapement = median(AnnualCount))
 
-datatable(esc_med)
 ```
+## Bar Plot
 
 ```{r}
 
@@ -56,8 +59,6 @@ locations <- esc %>%
   summarize(n =n()) %>% 
   drop_na()
 
- head(locations)
-
 ```
 
 
@@ -67,47 +68,7 @@ leaflet(locations) %>%
   addTiles() %>% 
   addMarkers(lng=~Longitude, lat=~Latitude, popup=~Location)
 
-
 ```
 
 
-
-## Prepare Escapment Goal Data
-
-Escapement Goals: [Andrew Munro and Eric Volk. 2017. Summary of Pacific Salmon Escapement Goals in Alaska with a Review of Escapements from 2007 to 2015. Knowledge Network for Biocomplexity. doi:10.5063/F1TQ5ZRG](http://doi:10.5063/F1TQ5ZRG)
-
-```{r}
-
-goals <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/knb.92014.1", method = "libcurl"), stringsAsFactors = FALSE)
-
-head(goals)
-
-
-```
-
-```{r}
-
-goals_BB <- goals %>%
-  filter(Species=="Sockeye", Region == "Bristol Bay", Lower != "eliminated") %>%
-  select(Species, Region, System, Lower, Upper, Type, Initial.Year) %>%
-  mutate(Lower = as.numeric(Lower), Initial.Year = as.numeric(Initial.Year)) %>% 
-  group_by(System)
-
-goals_BB
-```
-
-## Join Tables 
-
-```{r}
-
-eval <- left_join(esc_BB, goals_BB, by = c("Location" = "System")) %>% 
-  mutate(Lower.Goal.Exceeded = if_else(AnnualCount > Lower,TRUE,FALSE),
-         Upper.Goal.Exceeded = if_else(AnnualCount > Upper,TRUE,FALSE),
-         Goal.Met = if_else(AnnualCount >Lower & AnnualCount < Upper, TRUE,FALSE)) %>% 
-  select(Region, Location, Year, Species.x, Lower, Upper, Type, AnnualCount, Goal.Met, Lower.Goal.Exceeded, Upper.Goal.Exceeded)
-  
-
-head(eval)
-
-```
 
